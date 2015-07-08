@@ -1,8 +1,11 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 
+[RequireComponent(typeof(NetworkIdentity))]
+[RequireComponent(typeof(NetworkTransform))]
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMovement : MonoBehaviour {
+public class PlayerMovement : NetworkBehaviour {
     Rigidbody2D theRigidbody2D;
     Collider2D theCollider2D;
 
@@ -21,12 +24,12 @@ public class PlayerMovement : MonoBehaviour {
     public bool haveControl = true;
 
     // Ground Checking
-    public bool isGrounded = false;
+    private bool isGrounded = false;
     const float groundCheckMargin = 3f/32f; // 3 pixels
 
-    public bool isJumping = false;
+    private bool isJumping = false;
     public int airJumps = 1;
-    [SerializeField] private int airJumpCount = 0;
+    private int airJumpCount = 0;
 
     // Speed Cap
     public float acceleration = 5f, deacceleration = 8f;
@@ -37,9 +40,6 @@ public class PlayerMovement : MonoBehaviour {
 
     public float terminalSpeed = 12f;
     public bool limitTerminalSpeed = true;
-
-    // Debug
-    public Vector2 velocity;
 
     void Awake() {
         theRigidbody2D = GetComponent<Rigidbody2D>();
@@ -52,31 +52,34 @@ public class PlayerMovement : MonoBehaviour {
     }
 
     void Update() {
-        if (theRigidbody2D.velocity.y <= 0f) {
-            isGrounded = Physics2D.OverlapArea(
-                groundCheckA + theRigidbody2D.position,
-                groundCheckB + theRigidbody2D.position - Vector2.up * groundCheckMargin,
-                groundLayer);
-            if (isGrounded) {
-                airJumpCount = 0;
+        if (isLocalPlayer) {
+            if (theRigidbody2D.velocity.y <= 0f) {
+                isGrounded = Physics2D.OverlapArea(
+                    groundCheckA + theRigidbody2D.position,
+                    groundCheckB + theRigidbody2D.position - Vector2.up * groundCheckMargin,
+                    groundLayer);
+                if (isGrounded) {
+                    airJumpCount = 0;
+                }
             }
-        }
 
-        // Inputs
-        if (Input.GetKeyDown(jumpKey)) {
-            isJumping = true;
+            // Inputs
+            if (Input.GetKeyDown(jumpKey)) {
+                isJumping = true;
+            }
         }
     }
 
     void FixedUpdate() {
-        if (haveControl) {
-            Vector2 targetVelocity = theRigidbody2D.velocity;
+        if (isLocalPlayer) {
+            if (haveControl) {
+                Vector2 targetVelocity = theRigidbody2D.velocity;
 
-            InputMovement(ref targetVelocity);
-            MovementCap(ref targetVelocity);
+                InputMovement(ref targetVelocity);
+                MovementCap(ref targetVelocity);
 
-            theRigidbody2D.velocity = targetVelocity;
-            velocity = targetVelocity;
+                theRigidbody2D.velocity = targetVelocity;
+            }
         }
     }
 
