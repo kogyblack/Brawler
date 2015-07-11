@@ -1,0 +1,6 @@
+TODO LIST:
+- Variable jump height
+- Basic attacks
+- Force amplification (by hit count)
+- Menu
+- Character color selection
