@@ -10,7 +10,7 @@ public class PlayerMovement : NetworkBehaviour {
     Collider2D theCollider2D;
 
     // Ground check
-    public Vector2 groundCheckA, groundCheckB;
+    Vector2 groundCheckA, groundCheckB;
     // TODO(naum): Center this information into a Manager class
     public LayerMask groundLayer;
 
@@ -23,7 +23,11 @@ public class PlayerMovement : NetworkBehaviour {
 
     public bool haveControl = true;
 
+    // Direction correction
+    bool isHeadingRight = true;
+
     // Ground Checking
+    [SerializeField]
     private bool isGrounded = false;
     const float groundCheckMargin = 3f/32f; // 3 pixels
 
@@ -84,15 +88,24 @@ public class PlayerMovement : NetworkBehaviour {
     }
 
     void InputMovement(ref Vector2 targetVelocity) {
+        bool oldDirection = isHeadingRight;
+
         if (Input.GetKey(rightKey) && !Input.GetKey(leftKey) && targetVelocity.x >= 0f) {
+            isHeadingRight = true;
             targetVelocity.x += acceleration * Time.fixedDeltaTime;
         } else if (!Input.GetKey(rightKey) && Input.GetKey(leftKey) && targetVelocity.x <= 0f) {
+            isHeadingRight = false;
             targetVelocity.x -= acceleration * Time.fixedDeltaTime;
         } else {
             float sign = Mathf.Sign(targetVelocity.x);
             targetVelocity.x -= Mathf.Sign(targetVelocity.x) * deacceleration * Time.fixedDeltaTime;
             if (Mathf.Sign(targetVelocity.x) != sign)
                 targetVelocity.x = 0f;
+        }
+
+        // Update direction scale if direction changed
+        if (oldDirection != isHeadingRight) {
+            UpdateDirectionScale();
         }
 
         if (isJumping) {
@@ -119,5 +132,9 @@ public class PlayerMovement : NetworkBehaviour {
         if (limitTerminalSpeed && targetVelocity.y < -terminalSpeed) {
             targetVelocity.y = -terminalSpeed;
         }
+    }
+
+    void UpdateDirectionScale() {
+        transform.localScale = new Vector3(isHeadingRight ? 1f : -1f, 1f, 1f);
     }
 }
